@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"name": "Teste_RoboDragster",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"adafruit_ssd1306.h": "c",
+			"ssd1306.h": "c",
+			"stdarg.h": "c",
+			"L3GD20.C": "cpp"
+		}
+	}
+}
