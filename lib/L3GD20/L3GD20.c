@@ -31,13 +31,14 @@ void getGyroValues(uint16_t *X_Val, uint16_t *Y_Val, uint16_t *Z_Val)
 {
     xMSB = I2C_ReadRegister(L3GD20_Address, 0x29);
     xLSB = I2C_ReadRegister(L3GD20_Address, 0x28);
-    *X_Val = ((xMSB << 8) | xLSB);
 
     yMSB = I2C_ReadRegister(L3GD20_Address, 0x2B);
     yLSB = I2C_ReadRegister(L3GD20_Address, 0x2A);
-    *Y_Val = ((yMSB << 8) | yLSB);
 
     zMSB = I2C_ReadRegister(L3GD20_Address, 0x2D);
     zLSB = I2C_ReadRegister(L3GD20_Address, 0x2C);
+    
+    *X_Val = ((xMSB << 8) | xLSB);
+    *Y_Val = ((yMSB << 8) | yLSB);
     *Z_Val = ((zMSB << 8) | zLSB);
 }

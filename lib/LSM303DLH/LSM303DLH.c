@@ -21,9 +21,13 @@ void LSM303_Accel_Init(void)
 // Função para inicializar o magnetômetro
 void LSM303_Mag_Init(void)
 {
-    I2C_WriteRegister(LSM303_MAG_ADDRESS, CRA_REG_M, 0x14);
-    I2C_WriteRegister(LSM303_MAG_ADDRESS, 0x01, 0x20);
-    }
+    I2C_WriteRegister(LSM303_MAG_ADDRESS, 0x02, 0x00);// Single-conversion mode
+    I2C_WriteRegister(LSM303_MAG_ADDRESS, CRA_REG_M, 0x14); //30hz output
+    I2C_WriteRegister(LSM303_MAG_ADDRESS, 0x01, 0x20);//gain minimum
+    I2C_WriteRegister(LSM303_MAG_ADDRESS, 0x0A, 0x48);//Datasheet register
+    I2C_WriteRegister(LSM303_MAG_ADDRESS, 0x0B, 0x52);//Datasheet register
+    I2C_WriteRegister(LSM303_MAG_ADDRESS, 0x0C, 0x33);//Datasheet register       
+}
 
 // Função para ler dados do acelerômetro
 void LSM303_ReadAccel(uint16_t *x, uint16_t *y, uint16_t *z)
@@ -36,9 +40,9 @@ void LSM303_ReadAccel(uint16_t *x, uint16_t *y, uint16_t *z)
     z_h = I2C_ReadRegister(LSM303_ACCEL_ADDRESS, OUT_Z_H_A);
 
     // Combina os bytes alto e baixo
-    *x = (uint16_t)((x_h << 8) | x_l);
-    *y = (uint16_t)((y_h << 8) | y_l);
-    *z = (uint16_t)((z_h << 8) | z_l);
+    *x = ((x_h << 8) | x_l);
+    *y = ((y_h << 8) | y_l);
+    *z = ((z_h << 8) | z_l);
 }
 
 // Função para ler dados do magnetômetro
@@ -52,7 +56,7 @@ void LSM303_ReadMag(uint16_t *x, uint16_t *y, uint16_t *z)
     z_h = I2C_ReadRegister(LSM303_MAG_ADDRESS, OUT_Z_H_M);
 
     // Combina os bytes alto e baixo
-    *x = (uint16_t)((x_h << 8) | x_l);
-    *y = (uint16_t)((y_h << 8) | y_l);
-    *z = (uint16_t)((z_h << 8) | z_l);
+    *x = ((x_h << 8) | x_l);
+    *y = ((y_h << 8) | y_l);
+    *z = ((z_h << 8) | z_l);
 }

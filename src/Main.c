@@ -8,8 +8,6 @@
 #include "L3GD20.h"
 #include "UART.h"
 #include "LSM303DLH.h"
-#include "avr8-stub.h"
-#include "app_api.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +45,7 @@ int main(void)
     LSM303_Mag_Init();
     uart_send_string("LSM303_Mag_Init\n");
     _delay_ms(1000);
+
     LSM303_ReadAccel(&accel_X, &accel_Y, &accel_Z);
     sprintf(buffer, "Accel X: %d, Y: %d, Z: %d\r\n", accel_X, accel_Y, accel_Z);
     uart_send_string(buffer);
@@ -60,7 +59,7 @@ int main(void)
     // uart_send_string("escrever\n");
     // I2C_init();uart_send_string("I2C_init\n");
     // mpu6050_init();uart_send_string("mpu6050_init\n");
-    ssd1306_init();
+    // ssd1306_init();
     uart_send_string("ssd1306_init\n");
     // ssd1306_clear();
     uart_send_string("ssd1306_clear\n");
@@ -84,9 +83,10 @@ int main(void)
         //  sprintf(buffer, "%d,%d,%d\r\n", accel_X, accel_Y, accel_Z);
         // uart_send_string(buffer);
 
-        // LSM303_ReadMag(&mag_X, &mag_Y, &mag_Z);
-        // sprintf(buffer, "%d,%d,%d\r\n", mag_X, mag_Y, mag_Z);
-        // uart_send_string(buffer);
+        LSM303_ReadMag(&mag_X, &mag_Y, &mag_Z);
+        sprintf(buffer, "%d,%d,%d\r\n", mag_X, mag_Y, mag_Z);
+        uart_send_string(buffer);
+
 
         // uart_send_string("while\n");
         //  Lê os dados do MPU6050
@@ -109,6 +109,6 @@ int main(void)
         // uart_send_string("Done\n");
         // uart_send_string("TESTE\n");
         // uart_send_string("Done\n");
-        _delay_ms(10); // Delay de 1 segundo
+        _delay_ms(100); // Delay de 1 segundo
     }
 }
