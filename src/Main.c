@@ -11,104 +11,102 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
-uint16_t gyro_X = 0;
-uint16_t gyro_Y = 0;
-uint16_t gyro_Z = 0;
-uint16_t accel_X = 0;
-uint16_t accel_Y = 0;
-uint16_t accel_Z = 0;
-uint16_t mag_X = 0;
-uint16_t mag_Y = 0;
-uint16_t mag_Z = 0;
+int16_t gyro_X = 0;
+int16_t gyro_Y = 0;
+int16_t gyro_Z = 0;
+int16_t accel_X = 0;
+int16_t accel_Y = 0;
+int16_t accel_Z = 0;
+int16_t mag_X = 0;
+int16_t mag_Y = 0;
+int16_t mag_Z = 0;
 
+float real_gyro_X = 0.0;
+float real_gyro_Y = 0.0;
+float real_gyro_Z = 0.0;
+float real_accel_X = 0.0;
+float real_accel_Y = 0.0;
+float real_accel_Z = 0.0;
+float real_mag_X = 0.0;
+float real_mag_Y = 0.0;
+float real_mag_Z = 0.0;
+
+int16_t real_accel_X_I = 0;
+uint16_t real_accel_X_D = 0;
+int16_t real_accel_Y_I = 0;
+uint16_t real_accel_Y_D = 0;
+int16_t real_accel_Z_I = 0;
+uint16_t real_accel_Z_D = 0;
+
+int16_t max_accel_X = INT16_MIN, max_accel_Y = INT16_MIN, max_accel_Z = INT16_MIN;
+int16_t min_accel_X = INT16_MAX, min_accel_Y = INT16_MAX, min_accel_Z = INT16_MAX;
+
+uint16_t gyroHeading = 0;
+uint16_t accelPitch = 0;
+uint16_t accelRoll = 0;
+float dt = 0.1;
+float PI = 3.14;
+float teste = 0.0;
+char buffer[100];
 #define BUFFER_SIZE 10 // Tamanho suficiente para armazenar os números convertidos
+
+void float_2Int(float num, int16_t *parte_inteira, uint16_t *parte_decimal)
+{
+    float inteiro;
+    float decimal;
+
+    decimal = modff(num, &inteiro);                    // modff funciona melhor para floats
+    *parte_inteira = (int16_t)inteiro;                 // Parte inteira com o sinal original
+    *parte_decimal = (uint16_t)(fabs(decimal) * 1000); // Parte decimal positiva com 3 casas decimais
+}
+void update_max_min(float x, float y, float z)
+{
+    if (x > max_accel_X)
+        max_accel_X = x;
+    if (y > max_accel_Y)
+        max_accel_Y = y;
+    if (z > max_accel_Z)
+        max_accel_Z = z;
+
+    if (x < min_accel_X)
+        min_accel_X = x;
+    if (y < min_accel_Y)
+        min_accel_Y = y;
+    if (z < min_accel_Z)
+        min_accel_Z = z;
+}
 
 int main(void)
 {
     uart_init(9600); // Inicializa UART com baudrate de 9600
-    uart_send_string("uart_init\n");
-    I2C_init();
-    uart_send_string("I2C_init\n");
-    L3GD20_init();
-    uart_send_string("L3GD20_init\n");
-
-    getGyroValues(&gyro_X, &gyro_Y, &gyro_Z);
-    uart_send_string("getGyroValues\n");
-    char buffer[20];
-    sprintf(buffer, "Gyro X: %d, Y: %d, Z: %d\r\n", gyro_X, gyro_Y, gyro_Z);
-    uart_send_string(buffer);
-
-    LSM303_Accel_Init();
-    uart_send_string("LSM303_Accel_Init\n");
-    _delay_ms(1000);
-    LSM303_Mag_Init();
-    uart_send_string("LSM303_Mag_Init\n");
-    _delay_ms(1000);
-
-    LSM303_ReadAccel(&accel_X, &accel_Y, &accel_Z);
-    sprintf(buffer, "Accel X: %d, Y: %d, Z: %d\r\n", accel_X, accel_Y, accel_Z);
-    uart_send_string(buffer);
-
-    // Lê os dados do magnetômetro
-    LSM303_ReadMag(&mag_X, &mag_Y, &mag_Z);
-    sprintf(buffer, "Mag X: %d, Y: %d, Z: %d\r\n", mag_X, mag_Y, mag_Z);
-    uart_send_string(buffer);
-    // escrever(valores,11);
-    // debug_init();
-    // uart_send_string("escrever\n");
-    // I2C_init();uart_send_string("I2C_init\n");
-    // mpu6050_init();uart_send_string("mpu6050_init\n");
-    // ssd1306_init();
-    uart_send_string("ssd1306_init\n");
-    // ssd1306_clear();
-    uart_send_string("ssd1306_clear\n");
-
-    // int16_t ax, ay, az;
-    // float temperature;
-    // char buffer[BUFFER_SIZE];  // Declaração do buffer para armazenar as strings
-
-    // ssd1306_set_cursor(0, 0);        // Posiciona o cursor no topo
-    // uart_send_string("Done\n");
-    // ssd1306_print("a");   // Exibe o texto
-    uart_send_string("Done\n");
+    I2C_init();      // Inicializa comunicação I2C
+    LSM303_Accel_Init(); // Inicializa o acelerômetro
 
     while (1)
     {
-        // getGyroValues(&gyro_X, &gyro_Y, &gyro_Z);
-        // sprintf(buffer, "%d,%d,%d\r\n", gyro_X, gyro_Y, gyro_Z);
-        // uart_send_string(buffer);
+        // Leitura do acelerômetro
+        LSM303_ReadAccel(&accel_X, &accel_Y, &accel_Z);
 
-        //  LSM303_ReadAccel(&accel_X, &accel_Y, &accel_Z);
-        //  sprintf(buffer, "%d,%d,%d\r\n", accel_X, accel_Y, accel_Z);
-        // uart_send_string(buffer);
+        // Conversão para valores reais (g)
+        real_accel_X = (float)accel_X / 4096.0;
+        real_accel_Y = (float)accel_Y / 4096.0;
+        real_accel_Z = (float)accel_Z / 4096.0;
 
-        LSM303_ReadMag(&mag_X, &mag_Y, &mag_Z);
-        sprintf(buffer, "%d,%d,%d\r\n", mag_X, mag_Y, mag_Z);
+        // Separar em parte inteira e decimal
+        float_2Int(real_accel_X, &real_accel_X_I, &real_accel_X_D);
+        float_2Int(real_accel_Y, &real_accel_Y_I, &real_accel_Y_D);
+        float_2Int(real_accel_Z, &real_accel_Z_I, &real_accel_Z_D);
+
+        // Imprimir valores no formato correto
+        sprintf(buffer, "Accel: %d,%d,%d | Real: %d.%03d,%d.%03d,%d.%03d\n",
+                accel_X, accel_Y, accel_Z,
+                real_accel_X_I, real_accel_X_D,
+                real_accel_Y_I, real_accel_Y_D,
+                real_accel_Z_I, real_accel_Z_D);
         uart_send_string(buffer);
 
-
-        // uart_send_string("while\n");
-        //  Lê os dados do MPU6050
-        // mpu6050_read_accel(&ax, &ay, &az);
-        // temperature = mpu6050_read_temperature();
-
-        // Exibe no display
-        // ssd1306_clear();
-        // ssd1306_print("Accel X: ");
-        // ssd1306_print(itoa(ax, buffer, 10));
-        // ssd1306_print("\nAccel Y: ");
-        // ssd1306_print(itoa(ay, buffer, 10));
-        // ssd1306_print("\nAccel Z: ");
-        // ssd1306_print(itoa(az, buffer, 10));
-        // ssd1306_print("\nTemp: ");
-        // ssd1306_print(itoa((int)temperature, buffer, 10));
-        // ssd1306_set_cursor(0, 0);        // Posiciona o cursor no topo
-        // uart_send_string("Done\n");
-        // ssd1306_print("a");   // Exibe o texto
-        // uart_send_string("Done\n");
-        // uart_send_string("TESTE\n");
-        // uart_send_string("Done\n");
-        _delay_ms(100); // Delay de 1 segundo
+        _delay_ms(100); // Delay para estabilização
     }
 }
