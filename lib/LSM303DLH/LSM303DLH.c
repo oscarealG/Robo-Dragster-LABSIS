@@ -16,6 +16,7 @@ void LSM303_Accel_Init(void)
     // Configura o registrador CTRL_REG1_A: habilita X, Y, Z e configura frequência de 50 Hz
     // uint8_t data = 0x27; // 0b00100111: Power on, 50Hz, enable XYZ
     I2C_WriteRegister(LSM303_ACCEL_ADDRESS, CTRL_REG1_A, 0x27);
+     I2C_WriteRegister(LSM303_ACCEL_ADDRESS,35, 0x32);
 }
 
 // Função para inicializar o magnetômetro
@@ -30,7 +31,7 @@ void LSM303_Mag_Init(void)
 }
 
 // Função para ler dados do acelerômetro
-void LSM303_ReadAccel(uint16_t *x, uint16_t *y, uint16_t *z)
+void LSM303_ReadAccel(int16_t *x, int16_t *y, int16_t *z)
 {
     x_l = I2C_ReadRegister(LSM303_ACCEL_ADDRESS, OUT_X_L_A);
     x_h = I2C_ReadRegister(LSM303_ACCEL_ADDRESS, OUT_X_H_A);

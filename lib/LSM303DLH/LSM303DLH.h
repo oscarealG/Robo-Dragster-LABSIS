@@ -29,7 +29,7 @@
 
 void LSM303_Accel_Init(void);
 void LSM303_Mag_Init(void);
-void LSM303_ReadAccel(uint16_t* x, uint16_t* y, uint16_t* z);
+void LSM303_ReadAccel(int16_t* x, int16_t* y, int16_t* z);
 void LSM303_ReadMag(uint16_t* x, uint16_t* y, uint16_t* z);
 
 #endif
