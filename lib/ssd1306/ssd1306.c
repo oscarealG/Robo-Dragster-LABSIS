@@ -2,97 +2,122 @@
 #include "I2C.h"
 #include "font.h"
 #include <util/delay.h>
+#include "font.h"
 
-void ssd1306_init(void)
+void ssd1306_sendCommand(uint8_t command)
 {
-    I2C_start(); // Inicia a comunicação I2C com o display
-    I2C_write(SSD1306_ADDR << 1);
-    I2C_write(0xAE); // Desliga o display
-    I2C_write(0xD5); // Configura o clock do display
-    I2C_write(0x80); // Define a frequência do clock
-    I2C_write(0xA8); // Define o multiplex ratio
-    I2C_write(0x3F); // 1/64 multiplex
-    I2C_write(0xD3); // Define o deslocamento de linha
-    I2C_write(0x00); // Define o deslocamento de linha
-    I2C_write(0x40); // Define a linha de início
-    I2C_write(0x8D); // Ativa o driver de corrente (charge pump)
-    I2C_write(0x14); // Habilita a fonte de tensão para o driver de corrente
-    I2C_write(0x20); // Configura o modo de endereço
-    I2C_write(0x00); // Modo de endereçamento horizontal
-    I2C_write(0xA1); // Inverte a direção X
-    I2C_write(0xC8); // Inverte a direção Y
-    I2C_write(0xDA); // Configura os pinos VCOM
-    I2C_write(0x12); // Ajuste para o pino VCOM
-    I2C_write(0x81); // Configura o contraste do display
-    I2C_write(0x7F); // Nível de contraste (0x7F é o valor padrão)
-    I2C_write(0xA4); // Desliga o modo de inversão
-    I2C_write(0xA6); // Modo normal (não inverso)
-    I2C_write(0xAF); // Liga o display
-    I2C_stop();      // Finaliza a comunicação I2C
+    I2C_start();
+    I2C_write(SSD1306_I2C_ADDRESS << 1);
+    I2C_write(SSD1306_COMMAND);
+    I2C_write(command);
+    I2C_stop();
 }
 
-void ssd1306_clear(void)
+void ssd1306_sendData(uint8_t *data, size_t length)
 {
-    // uart_send_string("ssd1306_clear\n");
-    for (uint8_t i = 0; i < 8; i++)
+    for (size_t i = 0; i < length; i++)
     {
-        I2C_start(); // Inicia a comunicação I2C com o display
-        I2C_write(SSD1306_ADDR << 1);
-        I2C_write(0xB0 + i); // Define a página atual (0xB0 a 0xB7 para as 8 páginas)
-        I2C_write(0x00);     // Define a coluna de baixo (0x00-0x0F)
-        I2C_write(0x10);     // Define a coluna de cima (0x10-0x1F)
-        for (uint8_t j = 0; j < 128; j++)
+        I2C_start();
+        I2C_write(SSD1306_I2C_ADDRESS << 1);
+        I2C_write(SSD1306_DATA);
+        I2C_write(data[i]);
+        I2C_stop();
+    }
+}
+
+// Inicialização do display
+void ssd1306_init()
+{
+    // Sequência de inicialização do SSD1306
+    ssd1306_sendCommand(SSD1306_DISPLAY_OFF);     // Desliga o display
+    ssd1306_sendCommand(SSD1306_SET_MEMORY_MODE); // Configura o modo de memória
+    ssd1306_sendCommand(0x00);                    // Modo horizontal
+    ssd1306_sendCommand(SSD1306_DISPLAY_ON);      // Liga o display
+}
+
+// Limpa o display
+void ssd1306_clearDisplay(void)
+{
+    memset(pixel_buffer, 0, sizeof(pixel_buffer));
+    ssd1306_sendData(pixel_buffer, sizeof(pixel_buffer));
+}
+
+// Atualiza o display com os dados do pixel_buffer
+void ssd1306_display(void)
+{
+    // Configurar o display para atualizar
+    ssd1306_sendCommand(0x21);              // Set column address
+    ssd1306_sendCommand(0);                 // Column start address
+    ssd1306_sendCommand(SSD1306_WIDTH - 1); // Column end address
+
+    ssd1306_sendCommand(0x22);                     // Set page address
+    ssd1306_sendCommand(0);                        // Page start address
+    ssd1306_sendCommand((SSD1306_HEIGHT / 8) - 1); // Page end address
+
+    // Enviar dados do buffer via I2C
+    uint16_t count = SSD1306_WIDTH * (SSD1306_HEIGHT / 8);
+    uint8_t *ptr = pixel_buffer;
+
+    I2C_start();
+    I2C_write(SSD1306_I2C_ADDRESS << 1);
+    I2C_write(0x40); // Prefixo de dados
+
+    uint16_t bytesOut = 1; // Já enviamos o prefixo
+    while (count--)
+    {
+        if (bytesOut >= WIRE_MAX)
         {
-            I2C_write(0x00); // Envia o byte 0 para limpar o pixel
+            I2C_stop();
+            I2C_start();
+            I2C_write(SSD1306_I2C_ADDRESS << 1);
+            I2C_write(0x40); // Prefixo de dados
+            bytesOut = 1;
         }
-        I2C_stop(); // Finaliza a comunicação I2C
+        I2C_write(*ptr++);
+        bytesOut++;
     }
+
+    I2C_stop();
 }
 
-void ssd1306_print_old(const char *str)
+// Define a posição do cursor
+void ssd1306_setCursor(uint8_t x, uint8_t y)
 {
-    while (*str)
-    {                // Enquanto houver caracteres na string
-        I2C_start(); // Inicia a comunicação I2C
-        I2C_write(SSD1306_ADDR << 1);
-        I2C_write(0x40); // Indica que são dados, e não comandos
-        I2C_write(*str); // Envia o caractere para o display
-        str++;           // Avança para o próximo caractere
-        I2C_stop();      // Finaliza a comunicação I2C
-    }
+    cursor_x = x;
+    cursor_y = y;
 }
 
-void ssd1306_print(const char *str)
+// Escreve texto no pixel_buffer
+void ssd1306_writeText(const char *text)
 {
-    while (*str)
-    {                          // Enquanto houver caracteres na string
-        uint8_t c = *str - 32; // Converte o caractere para índice na tabela (começa em espaço ' ')
-        if (c < 0 || c >= 96)
-        {          // Verifica se o caractere está fora do intervalo suportado
-            c = 0; // Substitui caracteres inválidos por espaço
+    while (*text)
+    {
+        char c = *text++;
+        if (c < 32 || c > 127)
+        {
+            c = 32; // Substitui caracteres fora do intervalo por espaço
         }
 
-        I2C_start(); // Inicia a comunicação I2C
-        I2C_write(SSD1306_ADDR<< 1);
-        I2C_write(0x40); // Indica que são dados
+        uint16_t start_pos = cursor_x + (cursor_y * SSD1306_WIDTH);
+        if (start_pos + FONT_WIDTH >= sizeof(pixel_buffer))
+        {
+            break; // Evita escrita fora do buffer
+        }
 
         for (uint8_t i = 0; i < FONT_WIDTH; i++)
         {
-            I2C_write(pgm_read_byte(&font[c][i])); // Envia os dados do caractere como bitmap
+            pixel_buffer[start_pos + i] = pgm_read_byte(&font[c - 32][i]);
         }
-        I2C_stop(); // Finaliza a comunicação I2C
 
-        str++; // Avança para o próximo caractere
+        cursor_x += FONT_WIDTH + 1; // Espaço entre caracteres
+        if (cursor_x + FONT_WIDTH > SSD1306_WIDTH)
+        {
+            cursor_x = 0;
+            cursor_y++;
+            if (cursor_y >= SSD1306_HEIGHT / 8)
+            {
+                cursor_y = 0; // Retorna ao topo
+            }
+        }
     }
-}
-
-void ssd1306_set_cursor(uint8_t column, uint8_t page)
-{
-    I2C_start();
-    I2C_write(SSD1306_ADDR<< 1);
-    I2C_write(0x00);                 // Indica comandos
-    I2C_write(0xB0 + page);          // Define a página
-    I2C_write((column & 0x0F));      // Define a coluna baixa
-    I2C_write(0x10 | (column >> 4)); // Define a coluna alta
-    I2C_stop();
 }
