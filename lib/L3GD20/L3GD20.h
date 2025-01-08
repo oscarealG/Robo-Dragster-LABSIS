@@ -14,7 +14,17 @@
 #define CTRL_REG4 0x23
 #define CTRL_REG5 0x24
 
-void L3GD20_init (void);
-void getGyroValues(uint16_t* X_Val,uint16_t* Y_Val,uint16_t* Z_Val);
+
+float RateCalibrationX, RateCalibrationY, RateCalibrationZ;
+
+void L3GD20_init(void);
+
+void CalibGyroValues(int16_t NrOfSamples);
+
+void getGyroValues(int16_t *x, int16_t *y, int16_t *z);
+
+float getRealXGyro();
+float getRealYGyro();
+float getRealZGyro();
 
 #endif // L3GD20_H
