@@ -369,6 +369,23 @@ void RPMs(uint8_t time_ms)
     ticks_B = ticks_counter_B;
 }
 
+// INIT PB0 para o LED
+void Led_init()
+{
+    DDRB |= (1 << PB0);
+    PORTB &= ~(1 << PB0);
+}
+uint32_t last_toggle_time = 0;
+
+// Função que tem o LED a piscar
+void blink()
+{
+    if ((elapsedTime - last_toggle_time) >= 500)
+    {
+        PORTB ^= (1 << PB0);
+        last_toggle_time = elapsedTime;
+    }
+}
 // INIT do ADC prescaler para 64 (16MHz / 64 = 250kHz)
 void ADC_init()
 {
@@ -531,6 +548,7 @@ int main(void)
     init_pwm();
     init_timer2_pwm();
     init_interrupts();
+    Led_init();
     uart_send_string("INIT ");
     // timer2_init();
     sei();
@@ -558,8 +576,8 @@ int main(void)
     // Motor traseiro
     largura_pulso = 1; // 2 ms
 
-     _delay_ms(5000);
-     _delay_ms(1000);
+    _delay_ms(5000);
+    _delay_ms(1000);
 
     set_PWM_FR_FL_Motors(61, 61); //  [3º - 2º] [DIR - ESQ]
 
@@ -621,7 +639,7 @@ int main(void)
             if ((adc_result >= 500) && !(adc_result >= 1020))
             {
                 // Proximo passo
-                 set_PWM_FR_FL_Motors(69, 69); // ligar motores
+                set_PWM_FR_FL_Motors(69, 69); // ligar motores
                 modoCorrida = 2;
                 StartingTime = elapsedTime;
             }
@@ -733,7 +751,7 @@ int main(void)
             previous_Increment = elapsedTime;
         }
 #pragma endregion comment
-
+        blink();
     } // while
 }
 
