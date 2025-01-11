@@ -30,7 +30,6 @@ void L3GD20_init(void)
     // I2C_WriteRegister(L3GD20_Address, CTRL_REG5, 0b00000000);
 }
 
-
 void getGyroValues(int16_t *x, int16_t *y, int16_t *z)
 {
     x_lw = I2C_ReadRegister(L3GD20_Address, 0x29);
@@ -53,7 +52,7 @@ float getRealXGyro()
     x_hg = I2C_ReadRegister(L3GD20_Address, 0x28);
     uint16_t x = ((x_hg << 8) | x_lw);
 
-    return ((float)x * dpsComp) - RateCalibrationX;
+    return (((float)x / dpsComp) - RateCalibrationX) / 1000; // %1000 para diminuir a escala
 }
 
 float getRealYGyro()
@@ -62,7 +61,7 @@ float getRealYGyro()
     y_hg = I2C_ReadRegister(L3GD20_Address, 0x2A);
     uint16_t y = ((y_hg << 8) | y_lw);
 
-    return ((float)y * dpsComp) - RateCalibrationY;
+    return (((float)y / dpsComp) - RateCalibrationY) / 1000;// %1000 para diminuir a escala
 }
 
 float getRealZGyro()
@@ -71,7 +70,7 @@ float getRealZGyro()
     z_hg = I2C_ReadRegister(L3GD20_Address, 0x2C);
     uint16_t z = ((z_hg << 8) | z_lw);
 
-    return ((float)z * dpsComp) - RateCalibrationZ;
+    return (((float)z / dpsComp) - RateCalibrationZ) / 1000;// %1000 para diminuir a escala
 }
 
 void CalibGyroValues(int16_t NrOfSamples)
